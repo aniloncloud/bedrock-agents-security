@@ -68,6 +68,96 @@ Please ensure that your AWS CLI Profile has access to run CloudFormation and cre
 
 ```
 $ sam deploy --guided
+
+```
+The sam deployment will show progress of the deployment as follows:
+```
+sam deploy --guided
+
+Configuring SAM deploy
+======================
+
+        Looking for config file [samconfig.toml] :  Not found
+
+        Setting default arguments for 'sam deploy'
+        =========================================
+        Stack Name [sam-app]: claims-app
+        AWS Region [us-east-1]: 
+        #Shows you resources changes to be deployed and require a 'Y' to initiate deploy
+        Confirm changes before deploy [y/N]: 
+        #SAM needs permission to be able to create roles to connect to the resources in your template
+        Allow SAM CLI IAM role creation [Y/n]: 
+        #Preserves the state of previously provisioned resources when an operation fails
+        Disable rollback [y/N]: 
+        Save arguments to configuration file [Y/n]: 
+        SAM configuration file [samconfig.toml]: 
+        SAM configuration environment [default]: 
+
+        Looking for resources needed for deployment:
+
+        Managed S3 bucket: aws-sam-cli-managed-default-samclisourcebucket-xxxxxxxxx
+        A different default S3 bucket can be set in samconfig.toml and auto resolution of buckets turned off by setting resolve_s3=False
+
+        Saved arguments to config file
+        Running 'sam deploy' for future deployments will use the parameters saved above.
+        The above parameters can be changed by modifying samconfig.toml
+        Learn more about samconfig.toml syntax at 
+        https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+
+        Uploading to claims-app/f5495773ff2b15ce438e0aeeac0d3c5c.template  6475 / 6475  (100.00%)
+        Uploading to claims-app/cfab1db38a90b3ff649827396273221f.template  2803 / 2803  (100.00%)
+        Uploading to claims-app/89351551146be4ab2e3e1e91579e98e3  4834 / 4834  (100.00%)
+        Uploading to claims-app/20a6c83459bb299c1eb8757797232ddb.template  7787 / 7787  (100.00%)
+        Uploading to claims-app/14694d2c7ba4e7ec1c332ec246abb600  913 / 913  (100.00%)
+        Uploading to claims-app/183087561a9f6c92b07a5b7459c82977.template  4507 / 4507  (100.00%)
+        Uploading to claims-app/75cb10b10abd73ffebc060f16cfe2680.template  2919 / 2919  (100.00%)
+
+        Deploying with following values
+        ===============================
+        Stack name                   : claims-app
+        Region                       : us-east-1
+        Confirm changeset            : False
+        Disable rollback             : False
+        Deployment s3 bucket         : aws-sam-cli-managed-default-samclisourcebucket-xxxxxx
+        Capabilities                 : ["CAPABILITY_IAM"]
+        Parameter overrides          : {}
+        Signing Profiles             : {}
+
+Initiating deployment
+=====================
+
+        Uploading to claims-app/56e42262ae2a7cbdad105747889d2ef5.template  2208 / 2208  (100.00%)
+
+
+Waiting for changeset to be created..
+
+CloudFormation stack changeset
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Operation                                                   LogicalResourceId                                           ResourceType                                                Replacement                                               
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
++ Add                                                       AmazonVerifiedPermissions                                   AWS::CloudFormation::Stack                                  N/A                                                       
++ Add                                                       ApiGatewayStack                                             AWS::CloudFormation::Stack                                  N/A                                                       
++ Add                                                       BedrockAgentStack                                           AWS::CloudFormation::Stack                                  N/A                                                       
++ Add                                                       Cloud9Stack                                                 AWS::CloudFormation::Stack                                  N/A                                                       
++ Add                                                       CognitoUserPool                                             AWS::CloudFormation::Stack                                  N/A                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Changeset created successfully. 
+
+2024-04-18 19:17:16 - Waiting for stack create/update to complete
+
+CloudFormation events from stack operations (refresh every 5.0 seconds)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ResourceStatus                                              ResourceType                                                LogicalResourceId                                           ResourceStatusReason                                      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  claims-app                                                  User Initiated                                            
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  AmazonVerifiedPermissions                                   -                                                         
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  CognitoUserPool                                             -                                                         
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  Cloud9Stack                                                 -                                                         
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  CognitoUserPool                                             Resource creation Initiated                               
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  Cloud9Stack                                                 Resource creation Initiated                               
+CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  AmazonVerifiedPermissions                                   Resource creation Initiated       
 ```
 
 ## Step 4:
