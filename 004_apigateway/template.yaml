@@ -5,14 +5,11 @@ Description: An AWS Serverless Application Model template describing your functi
 Parameters:
   CognitoUserPoolArn:
     Type: String
-    Default: "arn:aws:cognito-idp:us-east-1:624178040188:userpool/us-east-1_3PtOz2Eah"
   BedrockAgentAliasId:
     Type: String 
-    Default: "N2JCGXFUEM"    
   BedrockAgentId:
     Type: String
-    Default: "SK8ZXR39DP"    
-  
+
     
 Resources:
 
