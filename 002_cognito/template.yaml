@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for creating an Amazon Cognito User Pool'
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: claims-app-users
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 7
+      DeletionProtection: ACTIVE
+      LambdaConfig: {}
+      Schema:
+        - Name: preferred_username
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints:
+            MinLength: '0'
+            MaxLength: '2048'
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+          StringAttributeConstraints:
+            MinLength: '0'
+            MaxLength: '2048'
+        - Name: region
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints: {}
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints: {}
+      AutoVerifiedAttributes:
+        - email
+      AliasAttributes:
+        - email
+        - preferred_username
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Priority: 1
+            Name: verified_email
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: claims-agent-auth
+      UserPoolId: !Ref UserPool
+      
+      
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: claims-app-demo
+      UserPoolId: !Ref UserPool
+      RefreshTokenValidity: 30
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ReadAttributes:
+        - custom:region
+        - custom:role
+        - email
+        - preferred_username        
+      WriteAttributes:
+        - custom:region
+        - custom:role
+        - email
+        - preferred_username        
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolArn:
+    Value: !GetAtt UserPool.Arn
+  UserPoolDomain:
+    Value: !Ref UserPoolDomain
+  UserPoolClientId:
+    Value: !Ref UserPoolClient

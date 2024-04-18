@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create an AWS Cloud9 environment'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'ClaimsAppCloud9Environment'
+    Description: 'The name of the Cloud9 environment'
+
+  InstanceType:
+    Type: String
+    Default: 't3.small'
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: 'The EC2 instance type for the Cloud9 environment'
+    
+  ImageId:
+    Type: String
+    Default: 'amazonlinux-2023-x86_64'
+    Description: 'The ImageId for Cloud9 environment'    
+    
+  gitRepo:
+    Type: String
+    Default: 'https://github.com/aniloncloud/bedrock-claude-chat'
+    Description: 'Git Repo to clone when initializing Cloud9'        
+
+Resources:
+  Cloud9Environment:
+    Type: 'AWS::Cloud9::EnvironmentEC2'
+    Properties:
+      Name: !Ref EnvironmentName
+      Description: 'Cloud9 environment created using CloudFormation'
+      AutomaticStopTimeMinutes: 30
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnet
+      ImageId: !Ref ImageId
+      Repositories: 
+        - PathComponent: /frontend
+          RepositoryUrl: !Ref gitRepo
+
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: 'Cloud9 VPC'
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: 'Cloud9 Public Subnet'
+
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'Cloud9 Public Route Table'
+
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
