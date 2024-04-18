@@ -93,6 +93,8 @@ Create the users in Amazon Cognito as follows:
 
 ```
 
+## Step 7:
+
 As soon as the application is up and running in your browser of choice you can begin asking questions in textbox like using natural language questions like :
 1. list all claims
 2. get claim details for claim 101
