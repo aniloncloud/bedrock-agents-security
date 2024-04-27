@@ -197,9 +197,11 @@ npm start
 
 ## Step 8:
 
-Create the users in Amazon Cognito as follows: 
+Update credentials in Amazon Cognito as follows: 
 
 ```
+aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-adjuster --password Examp1le_new_password --permanent
+aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-admin	 --password Examp1le_new_password --permanent
 
 ```
 

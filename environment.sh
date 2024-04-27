@@ -24,7 +24,7 @@ export bedrockLayerArn=$(aws lambda list-layer-versions --layer-name bedrock-lay
 
 sam deploy --guided --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM --parameter-overrides "ParameterKey=bedrockLayerArn,ParameterValue=${bedrockLayerArn}" --no-fail-on-empty-changeset
  
-export AWS_REGION = "us-east-1"
+export AWS_REGION="us-east-1"
 export WS_USER_POOL_ID=$(aws cognito-idp list-user-pools --max-results 20 --query 'UserPools[?Name==`claims-app-userpool`].Id | [0]' --output text)
 export WS_COGNITO_DOMAIN=$(aws cognito-idp describe-user-pool --user-pool-id $WS_USER_POOL_ID --query 'UserPool.Domain' --output text)  
 export WS_USER_POOL_CLIENT_ID=$(aws cognito-idp list-user-pool-clients --user-pool-id $WS_USER_POOL_ID --query 'UserPoolClients[0].ClientId' --output text)

@@ -50,7 +50,6 @@ Resources:
           MetricsEnabled: True
           ResourcePath: '/*'
           HttpMethod: '*'
-
       EndpointConfiguration:
           Type: REGIONAL    
       Cors:
@@ -61,45 +60,43 @@ Resources:
         DestinationArn: !GetAtt AccessLogs.Arn
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "integrationStatus": $context.integrationStatus, "integrationLatency": $context.integrationLatency, "responseLength":"$context.responseLength" }'
       Auth:
-        DefaultAuthorizer: CognitoUserPoolAuthorizer        
+        # DefaultAuthorizer: CognitoUserPoolAuthorizer        
         Authorizers:
           CognitoUserPoolAuthorizer:
             UserPoolArn: !Ref CognitoUserPoolArn
-            Identity:
-              Header: Authorization
       Tags:
         Name: !Sub "${AWS::StackName}-API"
         Stack: !Sub "${AWS::StackName}"
         
-  ClaimsAPIResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt ClaimsAPI.RootResourceId
-      PathPart: claims
-      RestApiId: !Ref ClaimsAPI
+  # ClaimsAPIResource:
+  #   Type: AWS::ApiGateway::Resource
+  #   Properties:
+  #     ParentId: !GetAtt ClaimsAPI.RootResourceId
+  #     PathPart: claims
+  #     RestApiId: !Ref ClaimsAPI
 
-  ClaimsAPIMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      HttpMethod: ANY
-      ResourceId: !Ref ClaimsAPIResource
-      RestApiId: !Ref ClaimsAPI
-      AuthorizationType: COGNITO_USER_POOLS
-      AuthorizerId: !Ref CognitoAuthorizer
-      Integration:
-        Type: AWS_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${claimsinvokebedrockagents.Arn}/invocations
+  # ClaimsAPIMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   Properties:
+  #     HttpMethod: ANY
+  #     ResourceId: !Ref ClaimsAPIResource
+  #     RestApiId: !Ref ClaimsAPI
+  #     AuthorizationType: COGNITO_USER_POOLS
+  #     AuthorizerId: !Ref CognitoAuthorizer
+  #     Integration:
+  #       Type: AWS_PROXY
+  #       IntegrationHttpMethod: POST
+  #       Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${claimsinvokebedrockagents.Arn}/invocations
 
-  CognitoAuthorizer:
-    Type: AWS::ApiGateway::Authorizer
-    Properties:
-      Name: CognitoUserPoolAuthorizer
-      Type: COGNITO_USER_POOLS
-      IdentitySource: method.request.header.Authorization
-      ProviderARNs:
-        - !Ref CognitoUserPoolArn
-      RestApiId: !Ref ClaimsAPI
+  # CognitoAuthorizer:
+  #   Type: AWS::ApiGateway::Authorizer
+  #   Properties:
+  #     Name: CognitoUserPoolAuthorizer
+  #     Type: COGNITO_USER_POOLS
+  #     IdentitySource: method.request.header.Authorization
+  #     ProviderARNs:
+  #       - !Ref CognitoUserPoolArn
+  #     RestApiId: !Ref ClaimsAPI
                 
   InvokeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -142,7 +139,9 @@ Resources:
             Path: /claims
             Method: ANY
             RestApiId:
-              Ref: ClaimsAPI        
+              Ref: ClaimsAPI    
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
 
