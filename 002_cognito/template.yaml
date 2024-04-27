@@ -5,7 +5,7 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: claims-app-users
+      UserPoolName: claims-app-userpool
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -24,13 +24,6 @@ Resources:
           StringAttributeConstraints:
             MinLength: '0'
             MaxLength: '2048'
-        - Name: email
-          AttributeDataType: String
-          Mutable: true
-          Required: true
-          StringAttributeConstraints:
-            MinLength: '0'
-            MaxLength: '2048'
         - Name: region
           AttributeDataType: String
           Mutable: true
@@ -41,25 +34,15 @@ Resources:
           Mutable: true
           Required: false
           StringAttributeConstraints: {}
-      AutoVerifiedAttributes:
-        - email
       AliasAttributes:
-        - email
         - preferred_username
-      VerificationMessageTemplate:
-        DefaultEmailOption: CONFIRM_WITH_CODE
-      UserAttributeUpdateSettings:
-        AttributesRequireVerificationBeforeUpdate:
-          - email
-      AccountRecoverySetting:
-        RecoveryMechanisms:
-          - Priority: 1
-            Name: verified_email
+
+
 
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: claims-agent-auth
+      Domain: !Sub claims-agent-auth-${AWS::AccountId}
       UserPoolId: !Ref UserPool
       
       
@@ -78,17 +61,80 @@ Resources:
       ReadAttributes:
         - custom:region
         - custom:role
-        - email
         - preferred_username        
       WriteAttributes:
         - custom:region
         - custom:role
-        - email
         - preferred_username        
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
         - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_USER_SRP_AUTH
+        
+      
+  ClaimsAdjuster:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: ClaimsAdjuster
+      Description: ClaimsAdjuster user group
+      Precedence: 0
+      UserPoolId: !Ref UserPool
+      
+      
+  claimsAppAdjusterUser:
+      Type: AWS::Cognito::UserPoolUser
+      Properties:
+        Username: claims-app-adjuster
+        UserAttributes:
+          - Name: custom:region
+            Value: northeast
+          - Name: custom:role
+            Value: ClaimsAdjuster
+        UserPoolId: !Ref UserPool
+        
+  adjusterGroup:  
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      GroupName: !Ref ClaimsAdjuster
+      Username: !Ref claimsAppAdjusterUser
+      UserPoolId: !Ref UserPool        
+      
+  ClaimsAdministrator:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: ClaimsAdministrator
+      Description: ClaimsAdministrator user group
+      Precedence: 0
+      UserPoolId: !Ref UserPool 
+            
+     
+  claimsAppAdminUser:
+      Type: AWS::Cognito::UserPoolUser
+      Properties:
+        Username: claims-app-admin
+        UserAttributes:
+          - Name: custom:region
+            Value: northeast
+          - Name: custom:role
+            Value: ClaimsAdmin
+        UserPoolId: !Ref UserPool
+        
+  adjusterGroup:  
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      GroupName: !Ref ClaimsAdministrator
+      Username: !Ref claimsAppAdminUser
+      UserPoolId: !Ref UserPool        
+             
+
+  adjusterGroup:  
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      GroupName: !Ref ClaimsAdjuster
+      Username: !Ref claimsAppAdjusterUser
+      UserPoolId: !Ref UserPool
+
+      
 
 Outputs:
   UserPoolId:

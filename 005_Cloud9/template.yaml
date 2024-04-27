@@ -33,6 +33,7 @@ Resources:
     Properties:
       Name: !Ref EnvironmentName
       Description: 'Cloud9 environment created using CloudFormation'
+      ConnectionType: CONNECT_SSM
       AutomaticStopTimeMinutes: 30
       InstanceType: !Ref InstanceType
       SubnetId: !Ref PublicSubnet
@@ -40,6 +41,39 @@ Resources:
       Repositories: 
         - PathComponent: /frontend
           RepositoryUrl: !Ref gitRepo
+      OwnerArn:   'arn:aws:sts::742809942259:assumed-role/Admin/anilnadi-Isengard' 
+
+  Cloud9InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+        - !Ref Cloud9InstanceRole
+
+  Cloud9InstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 'ec2.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSCloud9User'
+
+  Cloud9SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security group for Cloud9 environment'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'
 
   VPC:
     Type: 'AWS::EC2::VPC'

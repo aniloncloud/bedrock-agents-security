@@ -1,8 +1,9 @@
 const awsConfig = {
-  aws_project_region: 'us-east-1',
-  aws_cognito_region: 'us-east-1',
-  aws_user_pools_id: 'us-east-1_281NgjhEf',
-  aws_user_pools_web_client_id: '71q2tf4cbvlfekkrnhh0l613nc',
+  aws_project_region: process.env.AWS_REGION ,
+  aws_cognito_region: process.env.AWS_REGION ,
+  aws_user_pools_id: process.env.WS_USER_POOL_ID ,
+  aws_user_pools_web_client_id: process.env.WS_USER_POOL_CLIENT_ID ,
+
 };
 
 export default awsConfig;

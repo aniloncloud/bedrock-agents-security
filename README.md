@@ -41,11 +41,6 @@ The first step of utilizing this repo is performing a git clone of the repositor
 git clone git@github.com:aws-samples/bedrock-agents-security.git
 ```
 
-After cloning the repo onto your local machine, open it up in your favorite code editor. The file structure of this repo is broken into 3 key files,
-the app.py file, the llm_multi_modal_invoke.py file, and the requirements.txt. The app.py file houses the frontend application (a streamlit app).
-The llm_multi_modal_invoke.py file houses the logic of the application, including the image encoding and Amazon Bedrock API invocations.
-The requirements.txt file contains all necessary dependencies for this sample application to work.
-
 ## Step 2:
 
 Managing CLI parameters as Environment Variables.
@@ -55,7 +50,30 @@ Start with setting a default region. This code was tested in us-east-1.
 aws configure set default.region us-east-1
 
 ```
-## Step 3:
+## Step 4: Create Boto3 Lambda Layer for Lambda function
+
+```
+mkdir ./bedrock-layer
+cd ./bedrock-layer
+mkdir ./python
+pip3 install -t ./python/ boto3
+zip -r ../bedrock-layer.zip .
+cd ..
+
+aws lambda publish-layer-version \
+ --layer-name bedrock-layer \
+ --zip-file fileb://bedrock-layer.zip
+```
+
+Extract the ARN for lambda layer 
+
+```
+export bedrock_lambda_layer_version=$(aws lambda list-layer-versions --layer-name bedrock-layer --region us-east-1 --query 'max_by(LayerVersions, &Version).LayerVersionArn' --output text)
+
+```
+
+
+## Step 5:
 
 The below step will use AWS SAM (Serverless Application Model) to create the following resources as Nested Stacks: 
 1. Amazon Verified Permissions Policy Store and Policies
@@ -67,12 +85,12 @@ The below step will use AWS SAM (Serverless Application Model) to create the fol
 Please ensure that your AWS CLI Profile has access to run CloudFormation and create resources!
 
 ```
-$ sam deploy --guided
+sam deploy --guided --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides BEDROCK_LAYER_ARN=$BEDROCK_LAYER_ARN
 
 ```
 The sam deployment will show progress of the deployment as follows:
 ```
-sam deploy --guided
+sam deploy --guided --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
 
 Configuring SAM deploy
 ======================
@@ -160,22 +178,24 @@ CREATE_IN_PROGRESS                                          AWS::CloudFormation:
 CREATE_IN_PROGRESS                                          AWS::CloudFormation::Stack                                  AmazonVerifiedPermissions                                   Resource creation Initiated       
 ```
 
-## Step 4:
+## Step 6:
 
 After Step 3 is done, you can head over to the Cloud9 environment. This is where you will be running the front end code.  Once Cloud9 environment starts, this github repo will be cloned. 
 
-## Step 5:
+## Step 7:
 
-Run the below command to change to the frontend directory. Then run the following command to start the application.
+Run the below command to change to the frontend directory. Then run the following command to start the frontend application (NOTE:Please expose the port of the frontend application to access the application):
 
 ```
 cd bedrock-agents-security/006_Frontend
+
+npm install react-scripts
 
 npm start 
 ```
 
 
-## Step 6:
+## Step 8:
 
 Create the users in Amazon Cognito as follows: 
 
@@ -183,7 +203,7 @@ Create the users in Amazon Cognito as follows:
 
 ```
 
-## Step 7:
+## Step 9:
 
 As soon as the application is up and running in your browser of choice you can begin asking questions in textbox like using natural language questions like :
 1. list all claims

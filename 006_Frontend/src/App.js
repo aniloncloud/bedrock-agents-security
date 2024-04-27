@@ -108,7 +108,7 @@ const parseJwtToken = (tokenType) => {
 function callAPIGW(accessToken, idToken, inputPrompt, setIsLoading, sessionId) {
   setIsLoading(true); // Set isLoading to true before making the API call
 
-  const apiGatewayUrl = `https://rkft9s9vca.execute-api.us-east-1.amazonaws.com/Prod/claims?inputPrompt=${encodeURIComponent(inputPrompt)}&sessionId=${sessionId}`;
+  const apiGatewayUrl = `${process.env.REACT_APP_API_GATEWAY_URL}/claims?inputPrompt=${encodeURIComponent(inputPrompt)}&sessionId=${sessionId}`;
 
   // set ID Token in "Authorization" header
   const headers = {

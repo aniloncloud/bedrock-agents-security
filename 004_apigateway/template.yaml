@@ -9,8 +9,9 @@ Parameters:
     Type: String 
   BedrockAgentId:
     Type: String
+  BedrockLayerArn:
+    Type: String
 
-    
 Resources:
 
   ApiGwAccountConfig:
@@ -44,47 +45,61 @@ Resources:
     Name: ClaimsAPI
     Properties:
       StageName: Prod
+      MethodSettings:
+        - LoggingLevel: INFO
+          MetricsEnabled: True
+          ResourcePath: '/*'
+          HttpMethod: '*'
+
       EndpointConfiguration:
           Type: REGIONAL    
       Cors:
-        AllowMethods: "'PUT, POST, GET, DELETE, OPTIONS'"
+        AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
         AllowHeaders: "'Content-Type', 'Authorization', 'X-Forwarded-For', 'X-Api-Key', 'X-Amz-Date', 'X-Amz-Security-Token'"
         AllowOrigin: "'*'"
       AccessLogSetting:
         DestinationArn: !GetAtt AccessLogs.Arn
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "integrationStatus": $context.integrationStatus, "integrationLatency": $context.integrationLatency, "responseLength":"$context.responseLength" }'
       Auth:
-            DefaultAuthorizer: CognitoUserPoolAuthorizer # OPTIONAL        
-            Authorizers:
-              CognitoUserPoolAuthorizer:
-                UserPoolArn: !Ref CognitoUserPoolArn
-                Identity: # OPTIONAL
-                  Header: Authorization # OPTIONAL; Default: 'Authorization'  
-      DefinitionBody:
-        swagger: '2.0'
-        paths:
-          /claims:
-            x-amazon-apigateway-any-method:
-              x-amazon-apigateway-integration:
-                type: aws_proxy
-                httpMethod: POST
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${claimsinvokebedrockagents.Arn}/invocations
-              responses: {}
-              security:
-                - CognitoAuthorizer: []
+        DefaultAuthorizer: CognitoUserPoolAuthorizer        
+        Authorizers:
+          CognitoUserPoolAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+            Identity:
+              Header: Authorization
       Tags:
         Name: !Sub "${AWS::StackName}-API"
-        Stack: !Sub "${AWS::StackName}"                
-        # securityDefinitions:
-        #   CognitoAuthorizer:
-        #     type: apiKey
-        #     name: Authorization
-        #     in: header
-        #     x-amazon-apigateway-authtype: cognito_user_pools
-        #     x-amazon-apigateway-authorizer:
-        #       type: cognito_user_pools
-        #       providerARNs:
-        #         - !Ref CognitoUserPoolArn
+        Stack: !Sub "${AWS::StackName}"
+        
+  ClaimsAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ClaimsAPI.RootResourceId
+      PathPart: claims
+      RestApiId: !Ref ClaimsAPI
+
+  ClaimsAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: ANY
+      ResourceId: !Ref ClaimsAPIResource
+      RestApiId: !Ref ClaimsAPI
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref CognitoAuthorizer
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${claimsinvokebedrockagents.Arn}/invocations
+
+  CognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoUserPoolAuthorizer
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      ProviderARNs:
+        - !Ref CognitoUserPoolArn
+      RestApiId: !Ref ClaimsAPI
                 
   InvokeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -99,7 +114,7 @@ Resources:
       Description: ''
       MemorySize: 128
       Timeout: 180
-      Handler: invoke-lambda.lambda_handler
+      Handler: invoke_lambda.lambda_handler
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -109,9 +124,8 @@ Resources:
         Variables:
           AGENT_ALIAS_ID: !Ref BedrockAgentAliasId
           AGENT_ID: !Ref BedrockAgentId
-# BCXDCFUWAG VWF5DFLKSL
       Layers:
-         - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:bedrock-layer:2
+         - !Ref BedrockLayerArn
       PackageType: Zip
       Policies:
         - Statement:
@@ -119,43 +133,19 @@ Resources:
               Action:
                 - bedrock:InvokeAgent
               Resource: '*'
-            # - Effect: Allow
-            #   Action:
-            #     - logs:CreateLogGroup
-            #   Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
-            # - Effect: Allow
-            #   Action:
-            #     - logs:CreateLogStream
-            #     - logs:PutLogEvents
-            #   Resource:
-            #     - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/claims-invoke-bedrock-agents:*
-
       SnapStart:
         ApplyOn: None
-      # Events:
-      #   Api1:
-      #     Type: Api
-      #     Properties:
-      #       Path: /claims
-      #       Method: ANY
-      #       RestApiId:
-      #         Ref: ApiGatewayApi            
-      #       Auth:
-      #         Authorizers: !Ref CognitoAuthorizer
-
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /claims
+            Method: ANY
+            RestApiId:
+              Ref: ClaimsAPI        
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
 
-  # CognitoAuthorizer:
-  #   Type: AWS::ApiGateway::Authorizer
-  #   Properties:
-  #     Name: CognitoUserPoolAuthorizerTest
-  #     Type: COGNITO_USER_POOLS
-  #     IdentitySource: method.request.header.Authorization
-  #     ProviderARNs:
-  #       - !Ref CognitoUserPoolArn
-  #     RestApiId: !Ref ApiGatewayApi
-  
 Outputs:
   APIEndpoint:
     Description: "API Gateway endpoint URL"
@@ -163,4 +153,4 @@ Outputs:
 
   APIID:
     Description: "API Gateway ID"
-    Value: !Sub "${ClaimsAPI}"  
+    Value: !Ref ClaimsAPI

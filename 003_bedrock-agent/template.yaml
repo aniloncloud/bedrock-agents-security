@@ -7,9 +7,44 @@ Parameters:
     Type: String
   UserPoolId:
     Type: String    
+  BedrockLayerArn:
+    Type: String
 
 
 Resources:
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'IAM Role for Amazon Bedrock Agents'
+
+Resources:
+  AmazonBedrockRoleForAgentsAgentAccess:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AmazonBedrockExecutionRoleForAgents_agentAccess
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17' 
+        Statement:
+          - Sid: AmazonBedrockAgentTrustPolicy
+            Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Sub ${AWS::AccountId}
+              ArnLike:  
+                aws:SourceArn: !Sub arn:aws:bedrock:us-east-1:${AWS::AccountId}:agent/*
+      Policies:
+        - PolicyName: fm_access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AmazonBedrockAgentPolicy  
+                Effect: Allow
+                Action: bedrock:InvokeModel
+                Resource: 
+                  - arn:aws:bedrock:us-east-1::foundation-model/*
+                  
   BedrockAgent:
     Type: AWS::Bedrock::Agent
     Properties:
@@ -22,7 +57,7 @@ Resources:
       FoundationModel: anthropic.claude-v2:1
       IdleSessionTTLInSeconds: 1800
       AutoPrepare: True
-      AgentResourceRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonBedrockExecutionRoleForAgents_O795C6W5N5S
+      AgentResourceRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AmazonBedrockExecutionRoleForAgents_agentAccess
       ActionGroups:
       
         - 
@@ -184,7 +219,7 @@ Resources:
         MaximumEventAgeInSeconds: 21600
         MaximumRetryAttempts: 2
       Layers:
-        - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:bedrock-layer:2
+        - !Ref BedrockLayerArn
       PackageType: Zip
       Policies:
         - Statement:
@@ -209,7 +244,13 @@ Resources:
       Description: "Alias for testing"
 
 
-
+  LambdaResourcePolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ClaimsActionGroupLambdaExecutor
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceArn: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*      
 
 Outputs:
   BedrockAgentId:

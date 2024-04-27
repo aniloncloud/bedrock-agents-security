@@ -1,39 +1,44 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-
   Stack for managing claims-app resources
+
+Parameters:
+  bedrockLayerArn:
+    Type: String
 
 Resources:
 
-  AmazonVerifiedPermissions:
-    Type: AWS::Serverless::Application
+  AmazonVerifiedPermissionsStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      Location: 001_avp/template.yaml
-      
-  CognitoUserPool:
-    Type: AWS::Serverless::Application
+      TemplateURL: 001_avp/template.yaml
+
+  CognitoUserPoolStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      Location: 002_cognito/template.yaml
-      
+      TemplateURL: 002_cognito/template.yaml
+
   BedrockAgentStack:
-    Type: AWS::Serverless::Application
+    Type: AWS::CloudFormation::Stack
     Properties:
-      Location: 003_bedrock-agent/template.yaml      
-      Parameters:      
-        PolicyStoreId: !GetAtt AmazonVerifiedPermissions.Outputs.PolicyStoreId
-        UserPoolId: !GetAtt CognitoUserPool.Outputs.UserPoolId
-      
-  ApiGatewayStack:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: 004_apigateway/template.yaml      
+      TemplateURL: 003_bedrock-agent/template.yaml
       Parameters:
-        CognitoUserPoolArn: !GetAtt CognitoUserPool.Outputs.UserPoolArn   
+        PolicyStoreId: !GetAtt AmazonVerifiedPermissionsStack.Outputs.PolicyStoreId
+        UserPoolId: !GetAtt CognitoUserPoolStack.Outputs.UserPoolId
+        BedrockLayerArn: !Ref bedrockLayerArn
+
+  ApiGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 004_apigateway/template.yaml
+      Parameters:
+        CognitoUserPoolArn: !GetAtt CognitoUserPoolStack.Outputs.UserPoolArn
         BedrockAgentAliasId: !GetAtt BedrockAgentStack.Outputs.BedrockAgentAliasId
         BedrockAgentId: !GetAtt BedrockAgentStack.Outputs.BedrockAgentId
-        
-  Cloud9Stack:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: 005_Cloud9/template.yaml    
+        BedrockLayerArn: !Ref bedrockLayerArn
+
+  # Cloud9Stack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: 005_Cloud9/template.yaml
