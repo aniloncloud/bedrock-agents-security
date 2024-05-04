@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Stack for managing claims-app resources
+
+  '
+Parameters:
+  bedrockLayerArn:
+    Type: String
+Resources:
+  AmazonVerifiedPermissionsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: AmazonVerifiedPermissionsStack/template.yaml
+    Metadata:
+      SamResourceId: AmazonVerifiedPermissionsStack
+  CognitoUserPoolStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: CognitoUserPoolStack/template.yaml
+    Metadata:
+      SamResourceId: CognitoUserPoolStack
+  BedrockAgentStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: BedrockAgentStack/template.yaml
+      Parameters:
+        PolicyStoreId:
+          Fn::GetAtt:
+          - AmazonVerifiedPermissionsStack
+          - Outputs.PolicyStoreId
+        UserPoolId:
+          Fn::GetAtt:
+          - CognitoUserPoolStack
+          - Outputs.UserPoolId
+        BedrockLayerArn:
+          Ref: bedrockLayerArn
+    Metadata:
+      SamResourceId: BedrockAgentStack
+  ApiGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ApiGatewayStack/template.yaml
+      Parameters:
+        CognitoUserPoolArn:
+          Fn::GetAtt:
+          - CognitoUserPoolStack
+          - Outputs.UserPoolArn
+        BedrockAgentAliasId:
+          Fn::GetAtt:
+          - BedrockAgentStack
+          - Outputs.BedrockAgentAliasId
+        BedrockAgentId:
+          Fn::GetAtt:
+          - BedrockAgentStack
+          - Outputs.BedrockAgentId
+        BedrockLayerArn:
+          Ref: bedrockLayerArn
+    Metadata:
+      SamResourceId: ApiGatewayStack

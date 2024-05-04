@@ -1,0 +1,197 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: IAM Role for Amazon Bedrock Agents
+Parameters:
+  PolicyStoreId:
+    Type: String
+  UserPoolId:
+    Type: String
+  BedrockLayerArn:
+    Type: String
+Resources:
+  AmazonBedrockRoleForAgentsAgentAccess:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AmazonBedrockExecutionRoleForAgents_agentAccess
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AmazonBedrockAgentTrustPolicy
+          Effect: Allow
+          Principal:
+            Service: bedrock.amazonaws.com
+          Action: sts:AssumeRole
+          Condition:
+            StringEquals:
+              aws:SourceAccount:
+                Fn::Sub: ${AWS::AccountId}
+            ArnLike:
+              aws:SourceArn:
+                Fn::Sub: arn:aws:bedrock:us-east-1:${AWS::AccountId}:agent/*
+      Policies:
+      - PolicyName: fm_access
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: AmazonBedrockAgentPolicy
+            Effect: Allow
+            Action: bedrock:InvokeModel
+            Resource:
+            - arn:aws:bedrock:us-east-1::foundation-model/*
+  BedrockAgent:
+    Type: AWS::Bedrock::Agent
+    Properties:
+      AgentName: insurance-claims-agent-app-test
+      Instruction: You are an insurance agent that has access to domain-specific insurance
+        knowledge. You can create new insurance claims, send pending document reminders
+        to policy holders with open claims, and gather claim evidence. You can also
+        retrieve claim amount and repair estimate information for a specific claim
+        ID or answer general insurance questions about things like coverage, premium,
+        policy, rate, deductible, accident, documents, resolution, and condition.
+        You can answer internal questions about things like which steps an agent should
+        follow and the company's internal processes. You can respond to questions
+        about multiple claim IDs within a single conversation
+      FoundationModel: anthropic.claude-v2:1
+      IdleSessionTTLInSeconds: 1800
+      AutoPrepare: true
+      AgentResourceRoleArn:
+        Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/AmazonBedrockExecutionRoleForAgents_agentAccess
+      ActionGroups:
+      - ActionGroupName: ClaimsActionGroup
+        Description: Action group for managing insurance claims
+        ActionGroupExecutor:
+          Lambda:
+            Fn::GetAtt:
+            - ClaimsActionGroupLambdaExecutor
+            - Arn
+        ApiSchema:
+          Payload: "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"\
+            Insurance Claims API\",\n    \"description\": \"API for managing insurance\
+            \ claims\",\n    \"version\": \"1.0.0\"\n  },\n  \"paths\": {\n    \"\
+            /listClaims\": {\n      \"get\": {\n        \"description\": \"List all\
+            \ claims\",\n        \"responses\": {\n          \"200\": {\n        \
+            \    \"description\": \"Successful response\",\n            \"content\"\
+            : {\n              \"application/json\": {\n                \"schema\"\
+            : {\n                  \"type\": \"array\",\n                  \"items\"\
+            : {\n                    \"$ref\": \"#/components/schemas/Claim\"\n  \
+            \                }\n                }\n              }\n            }\n\
+            \          }\n        }\n      }\n    },\n    \"/getClaim/{claimId}\"\
+            : {\n      \"get\": {\n        \"description\": \"Get a claim by ID\"\
+            ,\n        \"parameters\": [\n          {\n            \"name\": \"claimId\"\
+            ,\n            \"in\": \"path\",\n            \"description\": \"ID of\
+            \ the claim to retrieve\",\n            \"required\": true,\n        \
+            \    \"schema\": {\n              \"type\": \"integer\"\n            }\n\
+            \          }\n        ],\n        \"responses\": {\n          \"200\"\
+            : {\n            \"description\": \"Successful response\",\n         \
+            \   \"content\": {\n              \"application/json\": {\n          \
+            \      \"schema\": {\n                  \"$ref\": \"#/components/schemas/Claim\"\
+            \n                }\n              }\n            }\n          }\n   \
+            \     }\n      }\n    },\n    \"/updateClaim/{claimId}\": {\n      \"\
+            put\": {\n        \"description\": \"Update a claim by ID\",\n       \
+            \ \"parameters\": [\n          {\n            \"name\": \"claimId\",\n\
+            \            \"in\": \"path\",\n            \"description\": \"ID of the\
+            \ claim to update\",\n            \"required\": true,\n            \"\
+            schema\": {\n              \"type\": \"integer\"\n            }\n    \
+            \      }\n        ],\n        \"responses\": {\n          \"200\": {\n\
+            \            \"description\": \"Successful response\",\n            \"\
+            content\": {\n              \"application/json\": {\n                \"\
+            schema\": {\n                  \"$ref\": \"#/components/schemas/Claim\"\
+            \n                }\n              }\n            }\n          }\n   \
+            \     }\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n\
+            \      \"Claim\": {\n        \"type\": \"object\",\n        \"description\"\
+            : \"An insurance claim\",\n        \"required\": [\n          \"id\",\n\
+            \          \"claimAmount\",\n          \"claimDescription\",\n       \
+            \   \"claimStatus\"\n        ],\n        \"properties\": {\n         \
+            \ \"id\": {\n            \"type\": \"integer\",\n            \"description\"\
+            : \"Unique identifier for the claim\"\n          },\n          \"claimAmount\"\
+            : {\n            \"type\": \"number\",\n            \"description\": \"\
+            The amount of the claim\"\n          },\n          \"claimDescription\"\
+            : {\n            \"type\": \"string\",\n            \"description\": \"\
+            Description of the claim\"\n          },\n          \"claimStatus\": {\n\
+            \            \"type\": \"string\",\n            \"description\": \"Status\
+            \ of the claim (approved, pending, denied)\",\n            \"enum\": [\n\
+            \              \"approved\",\n              \"pending\",\n           \
+            \   \"denied\"\n            ]\n          }\n        }\n      }\n    }\n\
+            \  }\n}\n"
+  ClaimsActionGroupLambdaExecutorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${ClaimsActionGroupLambdaExecutor}
+      RetentionInDays: 7
+  ClaimsActionGroupLambdaExecutor:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ClaimsActionGroupLambdaExecutor
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Handler: agent.lambda_handler
+      Runtime: python3.9
+      Architectures:
+      - x86_64
+      EphemeralStorage:
+        Size: 512
+      Environment:
+        Variables:
+          POLICY_STORE_ID:
+            Ref: PolicyStoreId
+          REGION:
+            Fn::Sub: ${AWS::AccountId}
+          USER_POOL_ID:
+            Ref: UserPoolId
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+      Layers:
+      - Ref: BedrockLayerArn
+      PackageType: Zip
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - verifiedpermissions:IsAuthorized
+          - verifiedpermissions:IsAuthorizedWithToken
+          - verifiedpermissions:*
+          Resource: '*'
+      SnapStart:
+        ApplyOn: None
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+    Metadata:
+      SamResourceId: ClaimsActionGroupLambdaExecutor
+  BedrockAgentAlias:
+    Type: AWS::Bedrock::AgentAlias
+    DependsOn: BedrockAgent
+    Properties:
+      AgentAliasName: TestAlias
+      AgentId:
+        Fn::GetAtt:
+        - BedrockAgent
+        - AgentId
+      Description: Alias for testing
+  LambdaResourcePolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: ClaimsActionGroupLambdaExecutor
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*
+Outputs:
+  BedrockAgentId:
+    Value:
+      Fn::GetAtt:
+      - BedrockAgent
+      - AgentId
+  BedrockAgentArn:
+    Value:
+      Fn::GetAtt:
+      - BedrockAgent
+      - AgentArn
+  BedrockAgentAliasId:
+    Value:
+      Fn::GetAtt:
+      - BedrockAgentAlias
+      - AgentAliasId

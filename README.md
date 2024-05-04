@@ -65,6 +65,7 @@ aws lambda publish-layer-version \
  --zip-file fileb://bedrock-layer.zip
 ```
 
+
 Extract the ARN for lambda layer 
 
 ```
@@ -72,6 +73,25 @@ export bedrock_lambda_layer_version=$(aws lambda list-layer-versions --layer-nam
 
 ```
 
+## Create cognitojwt layer for Lambda function
+
+```
+mkdir cognitojwt-layer
+cd cognitojwt-layer
+pip install cognitojwt -t python
+
+zip -r cognitojwt-layer.zip python
+
+aws lambda publish-layer-version --layer-name cognitojwt-layer --zip-file fileb://cognitojwt-layer.zip --compatible-runtimes python3.6 python3.7 python3.8 python3.12
+
+```
+
+### Extract the ARN for lambda layer 
+
+```
+export cognitojwt_layer=$(aws lambda list-layer-versions --layer-name cognitojwt_layer --region us-east-1 --query 'max_by(LayerVersions, &Version).LayerVersionArn' --output text)
+
+```
 
 ## Step 5:
 
@@ -85,6 +105,8 @@ The below step will use AWS SAM (Serverless Application Model) to create the fol
 Please ensure that your AWS CLI Profile has access to run CloudFormation and create resources!
 
 ```
+sam build 
+
 sam deploy --guided --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides BEDROCK_LAYER_ARN=$BEDROCK_LAYER_ARN
 
 ```
@@ -200,8 +222,8 @@ npm start
 Update credentials in Amazon Cognito as follows: 
 
 ```
-aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-adjuster --password Examp1le_new_password --permanent
-aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-admin	 --password Examp1le_new_password --permanent
+aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-adjuster --password <insert_password> --permanent
+aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-admin    --password <insert_password> --permanent
 
 ```
 

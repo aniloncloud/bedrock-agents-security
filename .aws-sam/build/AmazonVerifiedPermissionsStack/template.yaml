@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for Amazon Verified Permissions resources
+Resources:
+  AvpPolicyStore:
+    Type: AWS::VerifiedPermissions::PolicyStore
+    Properties:
+      Description: Fine-grained data access - Policy store for the claims application
+      ValidationSettings:
+        Mode: STRICT
+      Schema:
+        CedarJson: "{\n    \"avp::claim::app\": {\n        \"actions\": {\n      \
+          \      \"ListClaims\": {\n                \"appliesTo\": {\n           \
+          \         \"principalTypes\": [\n                        \"User\"\n    \
+          \                ],\n                    \"resourceTypes\": [\n        \
+          \                \"Application\"\n                    ]\n              \
+          \  }\n            },\n            \"UpdateClaim\": {\n                \"\
+          appliesTo\": {\n                    \"resourceTypes\": [\n             \
+          \           \"Claim\"\n                    ],\n                    \"principalTypes\"\
+          : [\n                        \"User\"\n                    ]\n         \
+          \       }\n            },\n            \"GetClaim\": {\n               \
+          \ \"appliesTo\": {\n                    \"resourceTypes\": [\n         \
+          \               \"Claim\"\n                    ],\n                    \"\
+          principalTypes\": [\n                        \"User\"\n                \
+          \    ]\n                }\n            }\n        },\n        \"entityTypes\"\
+          : {\n            \"Role\": {\n                \"shape\": {\n           \
+          \         \"type\": \"Record\",\n                    \"attributes\": {}\n\
+          \                },\n                \"memberOfTypes\": []\n           \
+          \ },\n            \"Application\": {\n                \"shape\": {\n   \
+          \                 \"type\": \"Record\",\n                    \"attributes\"\
+          : {\n                        \"region\": {\n                           \
+          \ \"type\": \"String\",\n                            \"required\": true\n\
+          \                        },\n                        \"owner\": {\n    \
+          \                        \"type\": \"Entity\",\n                       \
+          \     \"name\": \"User\",\n                            \"required\": true\n\
+          \                        }\n                    }\n                },\n\
+          \                \"memberOfTypes\": []\n            },\n            \"Claim\"\
+          : {\n                \"shape\": {\n                    \"type\": \"Record\"\
+          ,\n                    \"attributes\": {\n                        \"region\"\
+          : {\n                            \"type\": \"String\",\n               \
+          \             \"required\": true\n                        },\n         \
+          \               \"custom-attr-1\": {\n                            \"type\"\
+          : \"String\",\n                            \"required\": true\n        \
+          \                },\n                        \"owner\": {\n            \
+          \                \"required\": true,\n                            \"type\"\
+          : \"Entity\",\n                            \"name\": \"User\"\n        \
+          \                }\n                    }\n                },\n        \
+          \        \"memberOfTypes\": []\n            },\n            \"User\": {\n\
+          \                \"memberOfTypes\": [\n                    \"Role\"\n  \
+          \              ],\n                \"shape\": {\n                    \"\
+          attributes\": {\n                        \"custom\": {\n               \
+          \             \"attributes\": {\n                                \"region\"\
+          : {\n                                    \"type\": \"String\",\n       \
+          \                             \"required\": false\n                    \
+          \            }\n                            },\n                       \
+          \     \"required\": false,\n                            \"type\": \"Record\"\
+          \n                        }\n                    },\n                  \
+          \  \"type\": \"Record\"\n                }\n            }\n        }\n \
+          \   }\n}\n"
+  Policy1:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId:
+        Ref: AvpPolicyStore
+      Definition:
+        Static:
+          Description: Allow ClaimsAdministrator role to List claims across all regions
+          Statement: "permit (\n    principal in avp::claim::app::Role::\"ClaimsAdministrator\"\
+            ,\n    action in [\n    avp::claim::app::Action::\"ListClaims\"  \n  \
+            \  ],\n    resource\n);\n"
+  Policy2:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId:
+        Ref: AvpPolicyStore
+      Definition:
+        Static:
+          Description: Allow ClaimsAdjuster role to Get and Update Claims they own
+          Statement: "permit (\n    principal in avp::claim::app::Role::\"ClaimsAdjuster\"\
+            ,\n    action in [\n    avp::claim::app::Action::\"GetClaim\",\n     avp::claim::app::Action::\"\
+            UpdateClaim\"\n    ],\n    resource\n) when {\n    principal == resource.owner\n\
+            };\n"
+  Policy3:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId:
+        Ref: AvpPolicyStore
+      Definition:
+        Static:
+          Description: Allow ClaimsAdjuster role to List claims in their region
+          Statement: "permit (\n    principal in avp::claim::app::Role::\"ClaimsAdjuster\"\
+            ,\n    action in [avp::claim::app::Action::\"ListClaims\"],\n    resource\n\
+            )\nwhen\n{\n    resource has owner &&\n    principal == resource.owner\
+            \ &&\n    principal has custom &&\n    principal.custom has region &&\n\
+            \    principal.custom.region == resource.region\n};\n"
+Outputs:
+  PolicyStoreId:
+    Value:
+      Ref: AvpPolicyStore
+  Policy1Id:
+    Value:
+      Fn::GetAtt:
+      - Policy1
+      - PolicyId
+  Policy2Id:
+    Value:
+      Fn::GetAtt:
+      - Policy2
+      - PolicyId
+  Policy3Id:
+    Value:
+      Fn::GetAtt:
+      - Policy3
+      - PolicyId
