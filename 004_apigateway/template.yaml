@@ -142,6 +142,10 @@ Resources:
               Ref: ClaimsAPI    
             Auth:
               Authorizer: CognitoUserPoolAuthorizer
+            Cors:
+              AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              AllowHeaders: "'Content-Type', 'Authorization', 'X-Forwarded-For', 'X-Api-Key', 'X-Amz-Date', 'X-Amz-Security-Token'"
+              AllowOrigin: "'*'"              
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
 

@@ -36,4 +36,7 @@ aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --userna
 aws cognito-idp admin-set-user-password --user-pool-id $WS_USER_POOL_ID --username claims-app-admin	 --password Examp1le_new_password --permanent
 
 
-
+sed -e "s/{AWS_REGION}/${AWS_REGION}/g" \
+    -e "s/{WS_USER_POOL_ID}/${WS_USER_POOL_ID}/g" \
+    -e "s/{WS_USER_POOL_CLIENT_ID}/${WS_USER_POOL_CLIENT_ID}/g" \
+    aws-exports.tmplt.js > aws-exports.js

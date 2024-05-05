@@ -4,3 +4,7 @@ node_modules/
 *.log
 ws-env.sh
 samconfig.toml
+aws-exports.js
+006_Frontend/build/
+/src/aws-exports.js
+.aws-sam
