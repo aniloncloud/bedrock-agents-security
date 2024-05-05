@@ -1,10 +1,12 @@
 .env
 node_modules/
+**/node_modules/
 .DS_Store
 *.log
 ws-env.sh
 samconfig.toml
 aws-exports.js
 006_Frontend/build/
-/src/aws-exports.js
-.aws-sam
+**/aws-exports.js
+**/.aws-sam/
+**/build/
