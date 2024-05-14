@@ -1,0 +1,25 @@
+{
+  "amplify": {
+    "projectName": "myproject",
+    "envName": "live",
+    "defaultEditor": "code"
+  },
+  "frontend": {
+    "frontend": "javascript",
+    "framework": "react",
+    "config": {
+      "SourceDir": "src",
+      "DistributionDir": "build",
+      "BuildCommand": "npm run-script build",
+      "StartCommand": "npm run-script start"
+    }
+  },
+  "providers": {
+    "awscloudformation": {
+      "configLevel": "project",
+      "useProfile": false,
+      "profileName": "default",
+      "region": "us-east-1"
+    }
+  }
+}

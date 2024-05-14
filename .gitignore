@@ -1,6 +1,7 @@
 .env
 node_modules/
 **/node_modules/
+006_Frontend/amplify/
 .DS_Store
 *.log
 ws-env.sh
@@ -10,3 +11,4 @@ aws-exports.js
 **/aws-exports.js
 **/.aws-sam/
 **/build/
+006_Frontend/src/aws-exports.js

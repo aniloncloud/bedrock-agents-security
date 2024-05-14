@@ -214,6 +214,12 @@ cd bedrock-agents-security/006_Frontend
 npm install react-scripts
 
 npm start 
+
+amplify init --amplify "$(cat amplify-headless-init-payload.json | jq '.amplify')" --frontend "$(cat amplify-headless-init-payload.json | jq '.frontend')" --providers "$(cat amplify-headless-init-payload.json | jq '.providers')" --yes --profile access
+
+amplify add hosting
+
+amplify publish
 ```
 
 
